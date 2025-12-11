@@ -1,3 +1,38 @@
+<script setup lang="ts">
+import { ref, onMounted } from "vue";
+import { useFuelStore } from "../stores/fuel";
+
+const fuelStore = useFuelStore();
+
+// Form state
+const fuelType = ref<"Petrol" | "Diesel">("Petrol");
+const amount = ref<number>(1);
+const coordsInput = ref("");
+
+// Submit new request
+const submitRequest = async () => {
+  try {
+    const coords = coordsInput.value.split(",").map(c => parseFloat(c.trim()));
+    if (coords.length !== 2 || coords.some(isNaN)) {
+      alert("Please enter valid coordinates: lng, lat");
+      return;
+    }
+    await fuelStore.createRequest(fuelType.value, amount.value, coords);
+    alert("Fuel request created!");
+    // Reset form
+    amount.value = 1;
+    coordsInput.value = "";
+  } catch (err: any) {
+    alert(err);
+  }
+};
+
+// Load user requests on mount
+onMounted(() => {
+  fuelStore.fetchMyRequests();
+});
+</script>
+
 <template>
   <div class="min-h-screen bg-slate-100 py-8 px-6">
     <div class="max-w-4xl mx-auto">
@@ -136,37 +171,3 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, onMounted } from "vue";
-import { useFuelStore } from "../stores/fuel";
-
-const fuelStore = useFuelStore();
-
-// Form state
-const fuelType = ref<"Petrol" | "Diesel">("Petrol");
-const amount = ref<number>(1);
-const coordsInput = ref("");
-
-// Submit new request
-const submitRequest = async () => {
-  try {
-    const coords = coordsInput.value.split(",").map(c => parseFloat(c.trim()));
-    if (coords.length !== 2 || coords.some(isNaN)) {
-      alert("Please enter valid coordinates: lng, lat");
-      return;
-    }
-    await fuelStore.createRequest(fuelType.value, amount.value, coords);
-    alert("Fuel request created!");
-    // Reset form
-    amount.value = 1;
-    coordsInput.value = "";
-  } catch (err: any) {
-    alert(err);
-  }
-};
-
-// Load user requests on mount
-onMounted(() => {
-  fuelStore.fetchMyRequests();
-});
-</script>

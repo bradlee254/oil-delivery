@@ -1,3 +1,29 @@
+
+<script setup lang="ts">
+import { ref } from "vue";
+import { useAuthStore } from "../stores/auth";
+import { useRouter } from "vue-router";
+
+const email = ref("");
+const password = ref("");
+const auth = useAuthStore();
+const router = useRouter();
+
+const handleLogin = async () => {
+  try {
+    await auth.login(email.value, password.value);
+    // Redirect based on role
+    if (auth.user?.role === "admin") {
+      router.push("/admin");
+    } else {
+      router.push("/dashboard");
+    }
+  } catch (err: any) {
+    alert(err.response?.data?.message || "Login failed");
+  }
+};
+</script>
+
 <template>
   <div class="min-h-screen flex items-center justify-center bg-slate-100 px-6 py-12">
     <div class="w-full max-w-md">
@@ -89,27 +115,3 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref } from "vue";
-import { useAuthStore } from "../stores/auth";
-import { useRouter } from "vue-router";
-
-const email = ref("");
-const password = ref("");
-const auth = useAuthStore();
-const router = useRouter();
-
-const handleLogin = async () => {
-  try {
-    await auth.login(email.value, password.value);
-    // Redirect based on role
-    if (auth.user?.role === "admin") {
-      router.push("/admin");
-    } else {
-      router.push("/dashboard");
-    }
-  } catch (err: any) {
-    alert(err.response?.data?.message || "Login failed");
-  }
-};
-</script>

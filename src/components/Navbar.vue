@@ -1,3 +1,22 @@
+
+<script setup lang="ts">
+import { computed } from "vue";
+import { useAuthStore } from "../stores/auth";
+import { useRouter } from "vue-router";
+
+const auth = useAuthStore();
+const router = useRouter();
+
+// Computed properties for convenience
+const isLoggedIn = computed(() => !!auth.token);
+const isAdmin = computed(() => auth.user?.role === "admin");
+
+// Logout function
+const logoutUser = () => {
+  auth.logout();
+  router.push("/");
+};
+</script>
 <template>
   <nav class="bg-slate-900 text-white px-8 py-4 shadow-lg border-b-4 border-amber-500">
     <div class="max-w-7xl mx-auto flex justify-between items-center">
@@ -9,7 +28,7 @@
           </svg>
         </div>
         <div>
-          <div class="font-bold text-xl tracking-tight">Oil Delivery</div>
+          <div class="font-bold text-xl tracking-tight">Fuel Delivery</div>
           <div class="text-xs text-slate-400">Fast & Reliable</div>
         </div>
       </div>
@@ -60,21 +79,3 @@
   </nav>
 </template>
 
-<script setup lang="ts">
-import { computed } from "vue";
-import { useAuthStore } from "../stores/auth";
-import { useRouter } from "vue-router";
-
-const auth = useAuthStore();
-const router = useRouter();
-
-// Computed properties for convenience
-const isLoggedIn = computed(() => !!auth.token);
-const isAdmin = computed(() => auth.user?.role === "admin");
-
-// Logout function
-const logoutUser = () => {
-  auth.logout();
-  router.push("/");
-};
-</script>

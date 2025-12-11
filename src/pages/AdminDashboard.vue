@@ -1,3 +1,43 @@
+<script setup lang="ts">
+import { onMounted, ref } from "vue";
+import { useAdminFuelStore, Request } from "../stores/adminFuel";
+
+const adminStore = useAdminFuelStore();
+
+//  reactive state for the detail view/modal
+const viewingDetails = ref<Request | null>(null);
+
+onMounted(() => {
+  adminStore.fetchAllRequests();
+});
+
+// Function to open/close the detail view
+const viewDetails = (req: Request) => {
+  viewingDetails.value = req;
+};
+
+const closeDetails = () => {
+  viewingDetails.value = null;
+};
+
+// Update request status 
+const handleUpdateStatus = async (status: "pending" | "delivered" | "cancelled") => {
+  if (!viewingDetails.value) return;
+  
+  try {
+    const id = viewingDetails.value._id;
+    await adminStore.updateRequestStatus(id, status);
+    
+    viewingDetails.value.status = status; 
+    
+    alert(`Status updated to ${status.toUpperCase()}!`);
+    // closeDetails(); 
+  } catch (err: any) {
+    alert(err);
+  }
+};
+</script>
+
 <template>
   <div class="min-h-screen bg-slate-100 py-8 px-6">
     <div class="max-w-7xl mx-auto">
@@ -242,45 +282,3 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { onMounted, ref } from "vue";
-import { useAdminFuelStore, Request } from "../stores/adminFuel";
-
-const adminStore = useAdminFuelStore();
-
-// New reactive state for the detail view/modal
-const viewingDetails = ref<Request | null>(null);
-
-// Load all requests on mount
-onMounted(() => {
-  adminStore.fetchAllRequests();
-});
-
-// Function to open the detail view
-const viewDetails = (req: Request) => {
-  viewingDetails.value = req;
-};
-
-// Function to close the detail view
-const closeDetails = () => {
-  viewingDetails.value = null;
-};
-
-// Update request status (adapted for modal context)
-const handleUpdateStatus = async (status: "pending" | "delivered" | "cancelled") => {
-  if (!viewingDetails.value) return;
-  
-  try {
-    const id = viewingDetails.value._id;
-    await adminStore.updateRequestStatus(id, status);
-    
-    // Optimistic UI update for the modal content (optional, but good practice)
-    viewingDetails.value.status = status; 
-    
-    alert(`Status updated to ${status.toUpperCase()}!`);
-    // closeDetails(); // Uncomment this line if you want the modal to close after update
-  } catch (err: any) {
-    alert(err);
-  }
-};
-</script>
