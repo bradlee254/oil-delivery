@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useFuelStore } from "../stores/fuel";
+import Map from "../components/map.vue";
 
 const fuelStore = useFuelStore();
 
