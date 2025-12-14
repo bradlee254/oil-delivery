@@ -3,6 +3,7 @@ import { onMounted, ref, computed } from "vue";
 import { useAdminFuelStore, Request } from "../stores/adminFuel";
 
 const adminStore = useAdminFuelStore();
+const selectRider = ref("")
 
 const viewingDetails = ref<Request | null>(null);
 const search = ref("");
@@ -10,6 +11,7 @@ const statusFilter = ref<"all" | "pending" | "delivered" | "cancelled">("all");
 
 onMounted(() => {
   adminStore.fetchAllRequests();
+  adminStore.fetchRiders();
 });
 
 const filteredRequests = computed(() => {
@@ -24,6 +26,20 @@ const filteredRequests = computed(() => {
     return matchesSearch && matchesStatus;
   });
 });
+
+const assignRider = async ()=>{
+  if(!viewingDetails.value || !selectedRider.value ) return;
+  try {
+    await adminStore.assignRider(
+      viewingDetails.value._id,
+      selectedRider.value
+    );
+    alert("Rider assigned successfuly");
+    selectedRider.value = ""
+  }catch(err){
+    alert("failed to assign rider")
+  }
+}
 
 const viewDetails = (req: Request) => {
   viewingDetails.value = req;
@@ -178,8 +194,7 @@ const handleUpdateStatus = async (
     <!-- Modal -->
     <div
       v-if="viewingDetails"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-    >
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="bg-white rounded-lg w-full max-w-md p-6">
         <div class="flex justify-between items-center mb-4">
           <h3 class="font-bold text-lg">Request Details</h3>
@@ -217,6 +232,19 @@ const handleUpdateStatus = async (
             Cancelled
           </button>
         </div>
+      </div>
+      <div class="mt-6 border-t pt-4">
+        <h4 class="text-lg font-bold text-slate-900 mb-2">Assign Rider</h4>
+
+        <select v-model="selectedRider" class="w-ful border rounded-lg px-3 py-2 text-sm">
+          <option value="">Select available rider</option>
+          <option v-for="rider in adminStore.riders" :key="rider._id" :value="rider._id">
+            {{ rider.name }} ({{ rider.phone }})
+          </option>
+        </select>
+        <button class="mt-3 w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 text-sm font-semibold"
+        :disabled="!selectRider"
+        @click="assignRider"> Assign Rider</button>
       </div>
     </div>
   </div>
