@@ -1,43 +1,49 @@
 import { defineStore } from "pinia";
 import api from "../api/api";
 
-export interface FuelRequest {
+export interface RiderRequest {
   _id: string;
-  user: { name: string; email: string };
   fuelType: "Petrol" | "Diesel";
   amount: number;
-  status: "assigned" | "on_the_way" | "delivered";
-  deliveryAddress?: string;
+  status: "pending" | "delivered";
+  user: {
+    name: string;
+    email: string;
+  };
+  location: {
+    coordinates: number[];
+  };
   createdAt: string;
 }
 
 export const useRiderStore = defineStore("rider", {
   state: () => ({
-    requests: [] as FuelRequest[],
+    requests: [] as RiderRequest[],
     loading: false,
     error: null as string | null,
   }),
 
   actions: {
-    async fetchAssignedRequests() {
+    async fetchMyAssignments() {
       this.loading = true;
+      this.error = null;
       try {
-        const res = await api.get("/rider/requests");
+        const res = await api.get("/riders/my-assignments");
         this.requests = res.data.requests;
       } catch (err: any) {
-        this.error = err.response?.data?.message || "Failed to fetch requests";
+        this.error = err.response?.data?.message || "Failed to load assignments";
       } finally {
         this.loading = false;
       }
     },
 
-    async updateStatus(requestId: string, status: "on_the_way" | "delivered") {
+    async markDelivered(requestId: string) {
       try {
-        const res = await api.put(`/rider/requests/${requestId}/status`, { status });
+        await api.put(`/riders/complete/${requestId}`);
         const req = this.requests.find(r => r._id === requestId);
-        if (req) req.status = res.data.request.status;
+        if (req) req.status = "delivered";
       } catch (err: any) {
-        this.error = err.response?.data?.message || "Failed to update status";
+        throw err.response?.data?.message || "Failed to complete delivery";
       }
     },
   },
