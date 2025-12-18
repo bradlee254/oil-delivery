@@ -15,6 +15,9 @@ const handleLogin = async () => {
     // Redirect based on role
     if (auth.user?.role === "admin") {
       router.push("/admin");
+    } else if (auth.user?.role === "rider") {
+      router.push("/rider");
+    
     } else {
       router.push("/dashboard");
     }

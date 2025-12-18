@@ -28,7 +28,7 @@ export const useRiderStore = defineStore("rider", {
       this.loading = true;
       this.error = null;
       try {
-        const res = await api.get("/riders/my-assignments");
+        const res = await api.get("/rider/requests");
         this.requests = res.data.requests;
       } catch (err: any) {
         this.error = err.response?.data?.message || "Failed to load assignments";

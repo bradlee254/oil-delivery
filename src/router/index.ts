@@ -10,8 +10,16 @@ import AdminDashboard from "../pages/AdminDashboard.vue";
 import RiderDashboard from "../pages/RiderDashboard.vue";
 
 const routes: Array<RouteRecordRaw> = [
-  { path: "/", component: Login, meta: { guest: true } },
-  { path: "/register", component: Register, meta: { guest: true } },
+  {
+    path: "/",
+    component: Login,
+    meta: { guest: true },
+  },
+  {
+    path: "/register",
+    component: Register,
+    meta: { guest: true },
+  },
 
   {
     path: "/dashboard",
@@ -37,38 +45,42 @@ const router = createRouter({
   routes,
 });
 
-router.beforeEach(async(to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore();
-
   if (auth.token && !auth.user) {
-    auth.init();
+    await auth.init();
   }
 
   const isLoggedIn = !!auth.token;
-  const role = auth.user?.role;
-  console.log("Navigating to:", to.fullPath, "User role:", role);
+  const role = auth.user?.role.trim();
+ 
+  const normalizedRole = role?.trim().toLowerCase();
 
+  console.log("Navigating to:", to.fullPath, "User role (normalized):", normalizedRole);
   if (to.meta.requiresAuth && !isLoggedIn) {
     return next("/");
   }
-
-  
-  if (to.meta.requiresAdmin && role !== "admin") {
+  if (to.meta.requiresAdmin && normalizedRole !== "admin") {
     return next("/dashboard");
   }
 
-  
-  if (to.meta.requiresRider && role !== "rider") {
+  if (to.meta.requiresRider && normalizedRole !== "rider") {
     return next("/dashboard");
   }
 
-  // Guest pages
+  // 4. Logged-in users on guest pages (login/register) → redirect based on role
   if (to.meta.guest && isLoggedIn) {
-    if (role === "admin") return next("/admin");
-    if (role === "rider") return next("/rider");
+    if (normalizedRole === "admin") {
+      return next("/admin");
+    }
+    if (normalizedRole === "rider") {
+      return next("/rider");
+    }
+    // Fallback for any other role (e.g. driver, unknown)
     return next("/dashboard");
   }
 
+  // 5. All other cases → allow navigation
   next();
 });
 
