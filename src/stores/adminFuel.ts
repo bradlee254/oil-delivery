@@ -46,7 +46,7 @@ export const useAdminFuelStore = defineStore("adminFuel", {
     },
 
     async assignRider(requestId: string, riderId: string) {
-      await api.put(`/riders/assign/${requestId}`, { riderId });
+      await api.put(`/admin/requests/${requestId}/assign`, { riderId });
 
       const req = this.requests.find(r => r._id === requestId);
       const rider = this.riders.find(r => r._id === riderId);

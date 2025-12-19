@@ -36,15 +36,22 @@ export const useRiderStore = defineStore("rider", {
         this.loading = false;
       }
     },
+    async startDelivery(id: string){
+      await api.put(`/rider/start/${id}`);
+      const req = this.requests.find(r => r._id === id);
+      if (req) 
+        req.status = "delivered";
+      
+    }, 
 
-    async markDelivered(requestId: string) {
-      try {
-        await api.put(`/riders/complete/${requestId}`);
-        const req = this.requests.find(r => r._id === requestId);
-        if (req) req.status = "delivered";
-      } catch (err: any) {
-        throw err.response?.data?.message || "Failed to complete delivery";
-      }
-    },
+    async completeDelivery(id: string){
+      await api.put(`/rider/complete/${id}`);
+      const req = this.requests.find(r => r._id === id);
+      if (req) 
+        req.status = "delivered";
+      
+    }
+
+    
   },
 });
