@@ -6,47 +6,58 @@ export interface RiderRequest {
   _id: string;
   fuelType: "Petrol" | "Diesel";
   amount: number;
-  status: "assigned" | "on_the_way" | "delivered" | "cancelled"; // add real statuses
+  status: "assigned" | "on_the_way" | "delivered" | "cancelled";
   user: {
     name: string;
     email: string;
   };
   location: {
-    coordinates: number[]; // [longitude, latitude]
+    coordinates: number[];
   };
   createdAt: string;
 }
 
 export const useRiderStore = defineStore("rider", {
   state: () => ({
-    requests: [] as RiderRequest[],     // ← Properly initialized
+    activeRequests: [] as RiderRequest[],     // Current assignments
+    completedRequests: [] as RiderRequest[],  // Delivered ones
     loading: false,
     error: null as string | null,
+    showingCompleted: false,                  // Toggle view
   }),
 
   actions: {
     async fetchMyAssignments() {
-      this.loading = true;
-      this.error = null;
-      try {
-        const res = await api.get("/rider/requests");
-        console.log("Fetched Rider Assignments:", res);
-        // Always ensure it's an array (safety first)
-        this.requests = Array.isArray(res.data.requests) ? res.data.requests : [];
-      } catch (err: any) {
-        this.error = err.response?.data?.message || "Failed to load assignments";
-        this.requests = []; // Reset on error
-      } finally {
-        this.loading = false;
-      }
-    },
+  this.loading = true;
+  this.error = null;
+  try {
+    const res = await api.get("/rider/requests");
+    const allRequests = res.data.requests || [];
 
-    // Rider clicks "Start Delivery" → status: "on_the_way"
+    // Separate into active and completed
+    this.activeRequests = allRequests.filter(
+      (r: RiderRequest) => r.status === "assigned" || r.status === "on_the_way"
+    );
+
+    this.completedRequests = allRequests.filter(
+      (r: RiderRequest) => r.status === "delivered"
+    );
+  } catch (err: any) {
+    this.error = err.response?.data?.message || "Failed to load assignments";
+    this.activeRequests = [];
+    this.completedRequests = [];
+  } finally {
+    this.loading = false;
+  }
+},
+
+
+
     async startDelivery(id: string) {
       try {
-        await api.put(`/rider/requests/${id}/status`, { status: "on_the_way" });
+        await api.put(`/rider/requests/${id}/start`);
 
-        const req = this.requests.find((r) => r._id === id);
+        const req = this.activeRequests.find((r) => r._id === id);
         if (req) {
           req.status = "on_the_way";
         }
@@ -55,20 +66,23 @@ export const useRiderStore = defineStore("rider", {
       }
     },
 
-    // Rider clicks "Mark as Delivered" → status: "delivered"
     async completeDelivery(id: string) {
-      try {
-        await api.put(`/rider/requests/${id}/status`, { status: "delivered" });
+  try {
+    await api.put(`/rider/requests/${id}/complete`);
 
-        // Option 1: Remove from list (clean UI)
-        this.requests = this.requests.filter((r) => r._id !== id);
+    // Optimistically remove from active list
+    this.activeRequests = this.activeRequests.filter((r) => r._id !== id);
 
-        // Option 2: Keep and update status (uncomment if preferred)
-        // const req = this.requests.find((r) => r._id === id);
-        // if (req) req.status = "delivered";
-      } catch (err: any) {
-        this.error = err.response?.data?.message || "Failed to complete delivery";
-      }
+    // Optional: refetch to ensure completed list is up to date
+    // await this.fetchMyAssignments();
+  } catch (err: any) {
+    this.error = err.response?.data?.message || "Failed to complete delivery";
+  }
+},
+
+    // Toggle between active and completed view
+    toggleCompletedView() {
+      this.showingCompleted = !this.showingCompleted;
     },
   },
 });
