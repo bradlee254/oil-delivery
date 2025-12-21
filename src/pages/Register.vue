@@ -87,7 +87,7 @@ const handleRegister = async () => {
             </div>
 
             <div>
-              <label class="block text-sm font font-semibold text-slate-700 mb-2">
+              <label class="block text-sm font-semibold text-slate-700 mb-2">
                 Role
               </label>
               <div class="relative">
@@ -104,7 +104,9 @@ const handleRegister = async () => {
                   <option value="" disabled>Select your role</option>
                   <option value="customer">Customer</option>
                   <option value="rider">Rider</option>
+                  <option value="admin">Admin</option>
                 </select>
+              </div>
             </div>
 
             <div>

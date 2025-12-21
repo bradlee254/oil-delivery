@@ -1,60 +1,94 @@
+// src/stores/auth.ts
 import { defineStore } from "pinia";
 import api from "../api/api";
 
 interface User {
-  id: string;
+  _id: string;        // MongoDB uses _id, not id
   name: string;
   email: string;
-  role: string;
+  role: "customer" | "rider" | "admin";
 }
 
 export const useAuthStore = defineStore("auth", {
   state: () => ({
     user: null as User | null,
-    token: localStorage.getItem("token") || null,
+    token: null as string | null,
+    isLoggedIn: false,
   }),
 
   actions: {
-    //  Authorization
+    // Called on app start (in main.ts) and in router guard
     init() {
-      const token = localStorage.getItem("token");
-      if (token) {
+      // Use sessionStorage → clears when tab closes
+      const token = sessionStorage.getItem("token");
+      const userStr = sessionStorage.getItem("user");
+
+      if (token && userStr) {
+        this.token = token;
+        this.user = JSON.parse(userStr);
+        this.isLoggedIn = true;
+
+        // Set authorization header for all future requests
         api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      } else {
+        this.logout(); // Ensure clean state
       }
     },
 
-    // Login 
     async login(email: string, password: string) {
       try {
         const res = await api.post("/auth/login", { email, password });
-        this.user = res.data.user;
+
         this.token = res.data.token;
-        localStorage.setItem("token", this.token);
+        this.user = res.data.user;
+        this.isLoggedIn = true;
+
+        // Save to sessionStorage (not localStorage)
+        sessionStorage.setItem("token", this.token);
+        sessionStorage.setItem("user", JSON.stringify(this.user));
+
+        // Set header for subsequent requests
         api.defaults.headers.common["Authorization"] = `Bearer ${this.token}`;
       } catch (err: any) {
         throw err.response?.data?.message || "Login failed";
       }
     },
 
-    // Register 
-    async register(name: string, email: string, password: string) {
+    async register(name: string, role: string, email: string, password: string) {
       try {
-        const res = await api.post("/auth/register", { name, email, password });
-        this.user = res.data.user;
+        const res = await api.post("/auth/register", {
+          name,
+          email,
+          password,
+          role,
+        });
+
         this.token = res.data.token;
-        localStorage.setItem("token", this.token);
+        this.user = res.data.user;
+        this.isLoggedIn = true;
+
+        sessionStorage.setItem("token", this.token);
+        sessionStorage.setItem("user", JSON.stringify(this.user));
+
         api.defaults.headers.common["Authorization"] = `Bearer ${this.token}`;
       } catch (err: any) {
         throw err.response?.data?.message || "Registration failed";
       }
     },
 
-    // Logout user
     logout() {
       this.user = null;
       this.token = null;
-      localStorage.removeItem("token");
+      this.isLoggedIn = false;
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("user");
       delete api.defaults.headers.common["Authorization"];
+    },
+  },
+
+  getters: {
+    role(): string {
+      return this.user?.role || "customer";
     },
   },
 });
