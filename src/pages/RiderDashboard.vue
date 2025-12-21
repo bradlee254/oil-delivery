@@ -1,13 +1,90 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { onMounted, onUnmounted, ref, computed } from "vue";
 import { useRiderStore } from "../stores/riderStore";
 
 const riderStore = useRiderStore();
 
+/* ------------------ GEOLOCATION ------------------ */
+const currentLocation = ref<{ lat: number; lng: number } | null>(null);
+const locationError = ref<string | null>(null);
+let watchId: number | null = null;
+
+/* ------------------ DISTANCE UTILS ------------------ */
+const calculateDistance = (
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number
+): number => {
+  const R = 6371000;
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLng / 2) ** 2;
+
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
+/* ------------------ HELPERS ------------------ */
+const getDistanceToRequest = (req: any) => {
+  if (!currentLocation.value) return null;
+
+  return calculateDistance(
+    currentLocation.value.lat,
+    currentLocation.value.lng,
+    req.location.coordinates[1],
+    req.location.coordinates[0]
+  );
+};
+
+const canCompleteDelivery = (req: any) => {
+  const distance = getDistanceToRequest(req);
+  return distance !== null && distance <= 100;
+};
+
+/* ------------------ TRACKING ------------------ */
+const startLocationTracking = () => {
+  if (typeof navigator === "undefined" || !navigator.geolocation) {
+    locationError.value = "Geolocation is not supported";
+    return;
+  }
+
+  watchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      currentLocation.value = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+      };
+      locationError.value = null;
+    },
+    (err) => {
+      locationError.value =
+        err.code === 1
+          ? "Location access denied. Enable GPS."
+          : "Unable to get location.";
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+  );
+};
+
 onMounted(() => {
   riderStore.fetchMyAssignments();
+  startLocationTracking();
+});
+
+onUnmounted(() => {
+  if (watchId !== null) {
+    navigator.geolocation.clearWatch(watchId);
+  }
 });
 </script>
+
 
 <template>
   <div class="min-h-screen bg-slate-100 py-8 px-4 sm:px-6 lg:px-8">
@@ -78,19 +155,65 @@ onMounted(() => {
                   {{ req.status === "assigned" ? "ASSIGNED" : "ON THE WAY" }}
                 </span>
               </div>
+
+              <!-- Google Maps + Proximity Check -->
               <div>
                 <p class="text-sm font-semibold text-slate-700 mb-2">Delivery Location</p>
-                <p class="font-mono text-sm bg-slate-100 px-3 py-2 rounded">
-                  {{ req.location.coordinates.join(", ") }}
-                </p>
-                <a :href="`https://www.google.com/maps?q=${req.location.coordinates.join(',')}`"
-                   target="_blank"
-                   class="text-amber-600 hover:text-amber-700 font-medium text-sm mt-2 inline-block">
-                  Open in Google Maps →
+
+                <!-- Embedded Map (No API Key Needed) -->
+                <div class="rounded-lg overflow-hidden border border-slate-300 shadow-md mb-4">
+                  <iframe
+                    width="100%"
+                    height="350"
+                    style="border:0"
+                    loading="lazy"
+                    allowfullscreen
+                    referrerpolicy="no-referrer-when-downgrade"
+                    :src="`https://www.google.com/maps/embed/v1/place?q=${req.location.coordinates[1]},${req.location.coordinates[0]}&zoom=15`">
+                  </iframe>
+                </div>
+
+                <!-- Directions Link -->
+                <a
+                  :href="`https://www.google.com/maps/dir/?api=1&destination=${req.location.coordinates[1]},${req.location.coordinates[0]}`"
+                  target="_blank"
+                  class="text-amber-600 hover:text-amber-700 font-medium text-sm inline-block mb-4"
+                >
+                  🧭 Get Directions in Google Maps
                 </a>
+
+                <!-- Proximity Info -->
+                <div v-if="locationError" class="text-red-600 font-medium text-sm">
+                  ⚠️ {{ locationError }}
+                </div>
+                <div v-else-if="!currentLocation" class="text-amber-600 font-medium text-sm">
+                  📍 Getting your location...
+                </div>
+                <div v-else>
+                  <p class="font-semibold text-slate-700">
+                    Distance to delivery:
+                    <span class="text-xl font-bold text-amber-600">
+                      {{ Math.round(calculateDistance(
+                        currentLocation.lat,
+                        currentLocation.lng,
+                        req.location.coordinates[1],
+                        req.location.coordinates[0]
+                      )) }} m
+                    </span>
+                  </p>
+
+                  <p v-if="calculateDistance(currentLocation.lat, currentLocation.lng, req.location.coordinates[1], req.location.coordinates[0]) > 100"
+                     class="text-red-600 font-medium mt-2">
+                    🚫 You must be within 100 meters to complete delivery
+                  </p>
+                  <p v-else class="text-green-600 font-bold mt-2">
+                    ✅ You're close enough! You can now mark as delivered.
+                  </p>
+                </div>
               </div>
             </div>
 
+            <!-- Action Buttons with Proximity Lock -->
             <div class="flex gap-4">
               <button
                 v-if="req.status === 'assigned'"
@@ -103,16 +226,27 @@ onMounted(() => {
               <button
                 v-if="req.status === 'on_the_way'"
                 @click="riderStore.completeDelivery(req._id)"
-                class="px-8 py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-md transition"
+                :disabled="!currentLocation || calculateDistance(currentLocation.lat, currentLocation.lng, req.location.coordinates[1], req.location.coordinates[0]) > 100"
+                class="px-8 py-4 font-bold rounded-lg shadow-md transition"
+                :class="{
+                  'bg-green-600 hover:bg-green-700 text-white cursor-pointer':
+                    currentLocation && calculateDistance(currentLocation.lat, currentLocation.lng, req.location.coordinates[1], req.location.coordinates[0]) <= 100,
+                  'bg-gray-400 text-gray-700 cursor-not-allowed':
+                    !currentLocation || calculateDistance(currentLocation.lat, currentLocation.lng, req.location.coordinates[1], req.location.coordinates[0]) > 100
+                }"
               >
-                ✅ Mark as Delivered
+                {{ 
+                  currentLocation && calculateDistance(currentLocation.lat, currentLocation.lng, req.location.coordinates[1], req.location.coordinates[0]) <= 100
+                    ? '✅ Mark as Delivered'
+                    : '🔒 Get Closer (Within 100m)'
+                }}
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Completed Deliveries View -->
+      <!-- Completed Deliveries View (unchanged) -->
       <div v-else>
         <h2 class="text-2xl font-bold text-slate-900 mb-6">Completed Deliveries</h2>
 
