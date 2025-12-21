@@ -4,24 +4,15 @@ import { useAdminFuelStore, Request, Rider } from "../stores/adminFuel"; // Adde
 
 // Initialize Pinia store
 const adminStore = useAdminFuelStore();
-
-// State for rider assignment
 const selectRider = ref("");
-
-// State for modal
 const viewingDetails = ref<Request | null>(null);
-
-// State for filtering and searching
 const search = ref("");
 const statusFilter = ref<"all" | "pending" | "delivered" | "cancelled">("all");
-
-// Fetch data on component mount
 onMounted(() => {
   adminStore.fetchAllRequests();
   adminStore.fetchRiders();
 });
 
-// Computed property for filtered requests
 const filteredRequests = computed(() => {
   return adminStore.requests.filter((r) => {
     // Search filter
@@ -47,8 +38,6 @@ const assignRider = async () => {
       selectRider.value
     );
     alert("Rider assigned successfully");
-    // Optionally update the request with the assigned rider name for immediate UI feedback (if available)
-    // viewingDetails.value.assignedRiderName = adminStore.riders.find(r => r._id === selectRider.value)?.name || "";
     selectRider.value = "";
   } catch (err) {
     alert("Failed to assign rider");
@@ -62,7 +51,7 @@ const viewDetails = (req: Request) => {
 
 const closeDetails = () => {
   viewingDetails.value = null;
-  selectRider.value = ""; // Reset selected rider when closing
+  selectRider.value = ""; 
 };
 
 // Function to update request status
@@ -74,7 +63,6 @@ const handleUpdateStatus = async (
   try {
     const id = viewingDetails.value._id;
     await adminStore.updateRequestStatus(id, status);
-    // Update local state to reflect change immediately
     viewingDetails.value.status = status;
     alert(`Status updated to ${status}`);
   } catch (err: any) {

@@ -30,7 +30,7 @@ const handleLogin = async () => {
 <template>
   <div class="min-h-screen flex items-center justify-center bg-slate-100 px-6 py-12">
     <div class="w-full max-w-md">
-      <!-- Logo/Brand Section -->
+      
       <div class="text-center mb-8">
         <div class="inline-flex items-center justify-center bg-amber-500 p-4 rounded-2xl shadow-lg mb-4">
           <svg class="w-12 h-12 text-slate-900" fill="currentColor" viewBox="0 0 20 20">

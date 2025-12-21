@@ -1,8 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import type { RouteRecordRaw } from "vue-router";
 import { useAuthStore } from "../stores/auth";
-
-// Pages
 import Login from "../pages/Login.vue";
 import Register from "../pages/Register.vue";
 import Dashboard from "../pages/Dashboard.vue";
@@ -68,7 +66,7 @@ router.beforeEach(async (to, from, next) => {
     return next("/dashboard");
   }
 
-  // 4. Logged-in users on guest pages (login/register) → redirect based on role
+  // 4. Logged-in users redirect based on rol
   if (to.meta.guest && isLoggedIn) {
     if (normalizedRole === "admin") {
       return next("/admin");
@@ -76,11 +74,9 @@ router.beforeEach(async (to, from, next) => {
     if (normalizedRole === "rider") {
       return next("/rider");
     }
-    // Fallback for any other role (e.g. driver, unknown)
+    
     return next("/dashboard");
   }
-
-  // 5. All other cases → allow navigation
   next();
 });
 

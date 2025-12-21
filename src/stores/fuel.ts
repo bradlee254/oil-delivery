@@ -16,7 +16,7 @@ export const useFuelStore = defineStore("fuel", {
   }),
 
   actions: {
-    // Fetch all requests of the logged-in user
+    // Fetch all requests 
     async fetchMyRequests() {
       try {
         const res = await api.get("/fuel/requests");

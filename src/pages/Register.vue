@@ -11,11 +11,15 @@ const router = useRouter();
 
 const handleRegister = async () => {
   try {
-    await auth.register(name.value, email.value, password.value);
+    await auth.register(name.value, auth.selectedRole, email.value, password.value);
     // Redirect based on role
     if (auth.user?.role === "admin") {
       router.push("/admin");
-    } else {
+    } 
+    else if (auth.user?.role === "rider") {
+      router.push("/rider");
+    }
+    else {
       router.push("/dashboard");
     }
   } catch (err: any) {
@@ -80,6 +84,27 @@ const handleRegister = async () => {
                   required
                 />
               </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font font-semibold text-slate-700 mb-2">
+                Role
+              </label>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <select
+                  v-model="auth.selectedRole"
+                  class="w-full pl-10 pr-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-amber-500 transition-colors"
+                  required
+                >
+                  <option value="" disabled>Select your role</option>
+                  <option value="customer">Customer</option>
+                  <option value="rider">Rider</option>
+                </select>
             </div>
 
             <div>

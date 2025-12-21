@@ -15,7 +15,7 @@ export const useAuthStore = defineStore("auth", {
   }),
 
   actions: {
-    // Initialize Authorization header if token exists
+    //  Authorization
     init() {
       const token = localStorage.getItem("token");
       if (token) {
@@ -23,7 +23,7 @@ export const useAuthStore = defineStore("auth", {
       }
     },
 
-    // Login user
+    // Login 
     async login(email: string, password: string) {
       try {
         const res = await api.post("/auth/login", { email, password });
@@ -36,7 +36,7 @@ export const useAuthStore = defineStore("auth", {
       }
     },
 
-    // Register user
+    // Register 
     async register(name: string, email: string, password: string) {
       try {
         const res = await api.post("/auth/register", { name, email, password });

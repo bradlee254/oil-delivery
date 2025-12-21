@@ -1,4 +1,3 @@
-// src/stores/riderStore.ts
 import { defineStore } from "pinia";
 import api from "../api/api";
 
@@ -19,11 +18,11 @@ export interface RiderRequest {
 
 export const useRiderStore = defineStore("rider", {
   state: () => ({
-    activeRequests: [] as RiderRequest[],     // Current assignments
-    completedRequests: [] as RiderRequest[],  // Delivered ones
+    activeRequests: [] as RiderRequest[],    
+    completedRequests: [] as RiderRequest[],  
     loading: false,
     error: null as string | null,
-    showingCompleted: false,                  // Toggle view
+    showingCompleted: false,                  
   }),
 
   actions: {
@@ -33,8 +32,6 @@ export const useRiderStore = defineStore("rider", {
   try {
     const res = await api.get("/rider/requests");
     const allRequests = res.data.requests || [];
-
-    // Separate into active and completed
     this.activeRequests = allRequests.filter(
       (r: RiderRequest) => r.status === "assigned" || r.status === "on_the_way"
     );
@@ -69,12 +66,7 @@ export const useRiderStore = defineStore("rider", {
     async completeDelivery(id: string) {
   try {
     await api.put(`/rider/requests/${id}/complete`);
-
-    // Optimistically remove from active list
     this.activeRequests = this.activeRequests.filter((r) => r._id !== id);
-
-    // Optional: refetch to ensure completed list is up to date
-    // await this.fetchMyAssignments();
   } catch (err: any) {
     this.error = err.response?.data?.message || "Failed to complete delivery";
   }

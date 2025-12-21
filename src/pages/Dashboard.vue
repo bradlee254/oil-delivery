@@ -4,8 +4,6 @@ import { useFuelStore } from "../stores/fuel";
 import Map from "../components/map.vue";
 
 const fuelStore = useFuelStore();
-
-// Form state
 const fuelType = ref<"Petrol" | "Diesel">("Petrol");
 const amount = ref<number>(1);
 const coordsInput = ref("");
@@ -29,8 +27,6 @@ const submitRequest = async () => {
     alert(err);
   }
 };
-
-// Load user requests on mount
 onMounted(() => {
   fuelStore.fetchMyRequests();
 });
@@ -39,8 +35,7 @@ onMounted(() => {
 <template>
   <div class="min-h-screen bg-slate-100 py-8 px-6">
     <div class="max-w-4xl mx-auto">
-      <!-- Header -->
-      <div class="mb-8 pt-20 text-center">
+          <div class="mb-8 pt-20 text-center">
         <h1 class="text-3xl font-bold text-slate-900 mb-2">Dashboard</h1>
         <p class="text-slate-600">Manage your fuel delivery requests</p>
       </div>
