@@ -8,8 +8,9 @@ import { useAuthStore } from './stores/auth.ts'
 const app = createApp(App);
 
 app.use(createPinia());
-app.use(router);
-
 const authStore = useAuthStore();
 authStore.init()
+app.use(router);
+
+
 app.mount('#app');

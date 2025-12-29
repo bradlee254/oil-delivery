@@ -3,7 +3,7 @@ import { defineStore } from "pinia";
 import api from "../api/api";
 
 interface User {
-  _id: string;        // MongoDB uses _id, not id
+  _id: string;      
   name: string;
   email: string;
   role: "customer" | "rider" | "admin";
@@ -17,9 +17,9 @@ export const useAuthStore = defineStore("auth", {
   }),
 
   actions: {
-    // Called on app start (in main.ts) and in router guard
+  
     init() {
-      // Use sessionStorage → clears when tab closes
+  
       const token = sessionStorage.getItem("token");
       const userStr = sessionStorage.getItem("user");
 
